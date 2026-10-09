@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luas &amp; Keliling Persegi Panjang</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --paper: #f6faf4;
+    --grid: #cfe2d3;
+    --ink: #18286b;
+    --muted: #4d5b8a;
+    --marker: #ffd84d;
+    --note: #fffbe0;
+    --pencil: #c62f3b;
+    --hue: 200;
+    --display: "Baloo 2", "Trebuchet MS", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 40px 16px;
+    display: grid;
+    place-items: center;
+    background-color: var(--paper);
+    background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--ink);
+    font-family: Nunito, system-ui, sans-serif;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+    width: min(100%, 1040px);
+    align-items: start;
+}
+
+.panel,
+.paper {
+    border: 2.5px solid var(--ink);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.panel { padding: 32px; }
+
+h1 {
+    margin: 0 0 8px;
+    font-family: var(--display);
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.05;
+}
+
+.intro {
+    max-width: 42ch;
+    margin: 0 0 24px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* ---------- Form ---------- */
+.fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+label {
+    display: grid;
+    gap: 6px;
+    font-weight: 800;
+}
+
+.input-wrap { position: relative; }
+
+input {
+    width: 100%;
+    padding: 12px 40px 12px 12px;
+    border: 2.5px solid var(--ink);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+    transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+input::placeholder { color: #8f9ac0; font-weight: 500; }
+
+input:focus-visible {
+    outline: none;
+    background: var(--note);
+    box-shadow: 4px 4px 0 var(--ink);
+}
+
+input.typing {
+    background: hsl(var(--hue) 100% 90%);
+    animation: key-wiggle 220ms ease;
+}
+
+.unit {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    color: var(--muted);
+    font-weight: 700;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.pesan {
+    min-height: 1.4em;
+    margin: 12px 0 0;
+    color: var(--pencil);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+button {
+    padding: 12px 18px;
+    border: 2.5px solid var(--ink);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 3px 3px 0 var(--ink);
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    touch-action: manipulation;
+    user-select: none;
+    transition: box-shadow 120ms ease;
+}
+
+/* Efek tekan memakai bayangan saja (tanpa menggeser tombol) agar klik di tepi tidak meleset. */
+button:hover { box-shadow: 5px 5px 0 var(--ink); }
+button:active { box-shadow: 1px 1px 0 var(--ink); }
+button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.primary { flex: 1; background: var(--ink); color: #fff; }
+
+/* ---------- Hasil ---------- */
+.results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+}
+
+.results { transition: opacity 200ms ease; }
+.results.is-stale { opacity: 0.45; }
+
+.result {
+    padding: 14px;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    background: var(--note);
+}
+
+.result-label { font-weight: 800; }
+
+.formula {
+    margin: 4px 0 8px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.result-value {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.result-value.is-updated { animation: result-pop 450ms cubic-bezier(.2, .8, .2, 1); }
+
+/* ---------- Kertas gambar ---------- */
+.paper { padding: 24px; display: grid; gap: 16px; }
+
+.stage {
+    display: grid;
+    place-items: center;
+    min-height: 340px;
+    padding: 48px 40px 40px 60px;
+    border-radius: 10px;
+    background-color: #fff;
+    background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.rect {
+    --w: 60px;
+    --h: 60px;
+    --cols: 1;
+    --rows: 1;
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    border: 2.5px solid var(--ink);
+    background-color: var(--marker);
+    transition: width 500ms cubic-bezier(.3, 1.7, .5, 1), height 500ms cubic-bezier(.3, 1.7, .5, 1);
+}
+
+.rect.has-cells {
+    background-image:
+        linear-gradient(to right, rgb(24 40 107 / 25%) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(24 40 107 / 25%) 1px, transparent 1px);
+    background-size: calc(100% / var(--cols)) calc(100% / var(--rows));
+}
+
+.dim {
+    position: absolute;
+    padding: 0 8px;
+    border: 2px solid var(--pencil);
+    border-radius: 99px;
+    background: #fff;
+    color: var(--pencil);
+    font-size: 0.9rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.dim-top { top: -28px; left: 50%; transform: translate(-50%, -50%); }
+.dim-left { top: 50%; left: -30px; transform: translate(-50%, -50%) rotate(-90deg); }
+
+.mascot { display: flex; align-items: center; gap: 14px; }
+.mascot-face { display: inline-block; font-size: 3rem; line-height: 1; }
+.mascot-face.bounce { animation: mascot-bounce 500ms cubic-bezier(.3, 1.6, .5, 1); }
+
+.bubble {
+    position: relative;
+    margin: 0;
+    padding: 10px 14px;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    background: var(--note);
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.bubble::before {
+    position: absolute;
+    top: 50%;
+    left: -8px;
+    width: 12px;
+    height: 12px;
+    border-bottom: 2.5px solid var(--ink);
+    border-left: 2.5px solid var(--ink);
+    background: var(--note);
+    content: "";
+    transform: translateY(-50%) rotate(45deg);
+}
+
+/* ---------- Partikel emoji ---------- */
+.particle {
+    position: fixed;
+    z-index: 10;
+    font-size: 1.4rem;
+    pointer-events: none;
+    animation: particle-float 950ms ease-out forwards;
+}
+
+@keyframes key-wiggle {
+    0% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-3px) rotate(-.6deg); }
+    50% { transform: translateX(3px) rotate(.6deg); }
+    100% { transform: translateX(0) rotate(0); }
+}
+
+@keyframes particle-float {
+    from { opacity: 1; transform: translate(0, 0) scale(.6) rotate(0); }
+    to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.3) rotate(var(--rot)); }
+}
+
+@keyframes mascot-bounce {
+    0% { transform: scale(.6) rotate(-12deg); }
+    60% { transform: scale(1.2) rotate(8deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes result-pop {
+    0% { transform: scale(.85); }
+    65% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* ---------- Responsif & aksesibilitas ---------- */
+@media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+    .panel { padding: 24px 18px; }
+    .fields, .results { grid-template-columns: 1fr; }
+    .stage { min-height: 300px; padding: 48px 24px 32px 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+</style>
+</head>
+<body>
+    <main class="layout">
+        <section class="panel">
+            <h1>Luas &amp; Keliling<br>Persegi Panjang</h1>
+            <p class="intro">Ketik panjang dan lebarnya, lalu tekan Hitung. Gambar dan hasilnya muncul di buku kotak-kotak.</p>
+
+            <form id="hitung-form" novalidate>
+                <div class="fields">
+                    <label for="panjang">Panjang
+                        <span class="input-wrap">
+                            <input id="panjang" name="panjang" type="number" min="0" step="any" inputmode="decimal" placeholder="37" autocomplete="off">
+                            <span class="unit">m</span>
+                        </span>
+                    </label>
+                    <label for="lebar">Lebar
+                        <span class="input-wrap">
+                            <input id="lebar" name="lebar" type="number" min="0" step="any" inputmode="decimal" placeholder="35" autocomplete="off">
+                            <span class="unit">m</span>
+                        </span>
+                    </label>
+                </div>
+                <p class="pesan" id="pesan" role="alert"></p>
+                <div class="actions">
+                    <button class="primary" type="button" id="hitung">Hitung</button>
+                    <button type="button" id="acak">Acak 🎲</button>
+                    <button type="button" id="reset">Reset</button>
+                </div>
+            </form>
+
+            <section class="results" aria-live="polite" aria-label="Hasil perhitungan">
+                <div class="result">
+                    <span class="result-label">Luas</span>
+                    <p class="formula" id="rumus-luas">panjang × lebar</p>
+                    <p class="result-value"><span id="luas">—</span> m<sup>2</sup></p>
+                </div>
+                <div class="result">
+                    <span class="result-label">Keliling</span>
+                    <p class="formula" id="rumus-keliling">2 × (panjang + lebar)</p>
+                    <p class="result-value"><span id="keliling">—</span> m</p>
+                </div>
+            </section>
+        </section>
+
+        <section class="paper" aria-hidden="true">
+            <div class="stage">
+                <div class="rect" id="rect">
+                    <span class="dim dim-top" id="dim-p">?</span>
+                    <span class="dim dim-left" id="dim-l">?</span>
+                </div>
+            </div>
+            <div class="mascot">
+                <span class="mascot-face" id="mascot-face">🥚</span>
+                <p class="bubble" id="bubble">Ayo ketik angkanya!</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+const $ = (id) => document.getElementById(id);
+const form = $("hitung-form");
+const inputs = [form.elements.panjang, form.elements.lebar];
+const [luasEl, kelEl, rumusLuas, rumusKel] = ["luas", "keliling", "rumus-luas", "rumus-keliling"].map($);
+const [rect, dimP, dimL, face, bubble, pesan] = ["rect", "dim-p", "dim-l", "mascot-face", "bubble", "pesan"].map($);
+const results = document.querySelector(".results");
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const funEmojis = ["✨", "🎉", "🤪", "🍕", "🐸", "🚀", "💥", "🌈", "🦄", "🍩"];
+const sideEmojis = { panjang: ["📏", "↔️", "➡️"], lebar: ["📐", "↕️", "⬆️"] };
+const fmt = (n) => Number(n.toFixed(4)).toLocaleString("id-ID");
+const MAX_SIDE = 240;
+
+function replay(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+}
+
+function burst(x, y, emojis, count) {
+    if (reduceMotion) return;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement("span");
+        p.className = "particle";
+        p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        p.style.left = x + "px";
+        p.style.top = y + "px";
+        p.style.setProperty("--dx", Math.random() * 120 - 60 + "px");
+        p.style.setProperty("--dy", -(50 + Math.random() * 90) + "px");
+        p.style.setProperty("--rot", Math.random() * 120 - 60 + "deg");
+        p.addEventListener("animationend", () => p.remove());
+        document.body.appendChild(p);
+    }
+}
+
+function mood(luas) {
+    if (luas === 0) return ["🫥", "Luasnya nol... ruangnya cuma numpang lewat."];
+    if (luas < 10) return ["🐜", "Kecil banget! Semut aja kesempitan."];
+    if (luas < 100) return ["🐱", "Pas buat kamar kos. Kucing happy!"];
+    if (luas < 1000) return ["🐘", "Lumayan luas! Gajah bisa parkir di sini."];
+    if (luas < 10000) return ["🦖", "Wih, segede lapangan! Dino pun ngacir."];
+    return ["🚀", "Gila, ini mah seluas planet! 🪐"];
+}
+
+function setMascot(emoji, text) {
+    face.textContent = emoji;
+    bubble.textContent = text;
+    replay(face, "bounce");
+}
+
+function clearResults() {
+    rect.style.setProperty("--w", "60px");
+    rect.style.setProperty("--h", "60px");
+    rect.classList.remove("has-cells");
+    dimP.textContent = dimL.textContent = "?";
+    luasEl.textContent = kelEl.textContent = "—";
+    rumusLuas.textContent = "panjang × lebar";
+    rumusKel.textContent = "2 × (panjang + lebar)";
+}
+
+// Mengembalikan true jika hasil berhasil dihitung.
+function update(strict = false) {
+    const [p, l] = inputs.map((input) => input.valueAsNumber);
+    const okP = Number.isFinite(p);
+    const okL = Number.isFinite(l);
+    pesan.textContent = "";
+    results.classList.remove("is-stale");
+
+    if (okP && okL && (p < 0 || l < 0)) {
+        clearResults();
+        pesan.textContent = "Ukuran tidak boleh negatif.";
+        setMascot("🤨", "Angka minus? Ruangnya di dimensi lain nih!");
+        return false;
+    }
+
+    if (!okP || !okL) {
+        clearResults();
+        if (strict) pesan.textContent = "Isi panjang dan lebar dulu ya.";
+        if (okP || okL) setMascot("🤔", "Tinggal satu angka lagi...");
+        else setMascot("🥚", "Ayo ketik angkanya!");
+        return false;
+    }
+
+    const luas = p * l;
+    const keliling = 2 * (p + l);
+    const biggest = Math.max(p, l, 1);
+
+    rect.style.setProperty("--w", Math.max(14, (MAX_SIDE * p) / biggest) + "px");
+    rect.style.setProperty("--h", Math.max(14, (MAX_SIDE * l) / biggest) + "px");
+
+    // Tampilkan kotak satuan jika ukurannya bilangan bulat kecil.
+    const showCells = Number.isInteger(p) && Number.isInteger(l) && p > 0 && l > 0 && p <= 30 && l <= 30;
+    rect.classList.toggle("has-cells", showCells);
+    if (showCells) {
+        rect.style.setProperty("--cols", p);
+        rect.style.setProperty("--rows", l);
+    }
+
+    dimP.textContent = fmt(p) + " m";
+    dimL.textContent = fmt(l) + " m";
+    rumusLuas.textContent = `${fmt(p)} × ${fmt(l)}`;
+    rumusKel.textContent = `2 × (${fmt(p)} + ${fmt(l)})`;
+    luasEl.textContent = fmt(luas);
+    kelEl.textContent = fmt(keliling);
+    [luasEl, kelEl].forEach((el) => replay(el.parentElement, "is-updated"));
+
+    setMascot(...mood(luas));
+    return true;
+}
+
+// Saat mengetik, hasil tidak dihitung. Hanya memberi petunjuk lucu.
+function markStale() {
+    const [p, l] = inputs.map((input) => input.valueAsNumber);
+    const okP = Number.isFinite(p);
+    const okL = Number.isFinite(l);
+    pesan.textContent = "";
+    results.classList.toggle("is-stale", luasEl.textContent !== "—");
+    if (okP && okL) setMascot("😎", "Siap! Tekan Hitung.");
+    else if (okP || okL) setMascot("🤔", "Tinggal satu angka lagi...");
+    else setMascot("🥚", "Ayo ketik angkanya!");
+}
+
+let hue = 200;
+inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+        hue = (hue + 47) % 360;
+        input.style.setProperty("--hue", hue);
+        replay(input, "typing");
+        clearTimeout(input.typingTimer);
+        input.typingTimer = setTimeout(() => input.classList.remove("typing"), 350);
+
+        const box = input.getBoundingClientRect();
+        const x = box.left + Math.min(14 + input.value.length * 9, box.width - 40);
+        burst(x, box.top + 4, [...sideEmojis[input.name], ...funEmojis], 2);
+
+        markStale();
+    });
+});
+
+function hitung() {
+    if (update(true)) {
+        const box = $("hitung").getBoundingClientRect();
+        burst(box.left + box.width / 2, box.top, funEmojis, 22);
+    }
+}
+
+// Tombol memakai klik biasa (bukan submit) supaya tetap jalan di tampilan pratinjau yang memblokir form.
+$("hitung").addEventListener("click", hitung);
+form.addEventListener("submit", (event) => event.preventDefault());
+inputs.forEach((input) =>
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            hitung();
+        }
+    })
+);
+
+$("acak").addEventListener("click", (event) => {
+    inputs.forEach((input) => (input.value = 1 + Math.floor(Math.random() * 30)));
+    markStale();
+    const box = event.currentTarget.getBoundingClientRect();
+    burst(box.left + box.width / 2, box.top, funEmojis, 12);
+});
+
+$("reset").addEventListener("click", () => {
+    inputs.forEach((input) => (input.value = ""));
+    update();
+    inputs[0].focus();
+});
+</script>
+</body>
+</html>
